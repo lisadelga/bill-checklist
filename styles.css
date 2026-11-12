@@ -43,7 +43,10 @@ body {
 
 .wood-bg {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 0;
   background:
     radial-gradient(ellipse at 20% 10%, rgba(90, 50, 25, 0.45), transparent 50%),
@@ -64,7 +67,10 @@ body {
 .wood-bg::after {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background:
     repeating-linear-gradient(
       0deg,
@@ -80,7 +86,9 @@ body {
 .poster {
   position: relative;
   z-index: 1;
-  width: min(980px, calc(100% - 1.5rem));
+  /* Avoid CSS min() for older Android WebViews */
+  width: 980px;
+  max-width: calc(100% - 1.5rem);
   margin: 1.25rem auto 2.5rem;
   padding: 1.25rem 1.35rem 1.5rem;
   background:
@@ -93,12 +101,16 @@ body {
     0 0 0 5px #2a1c12,
     0 18px 40px var(--shadow),
     inset 0 1px 0 rgba(255, 220, 160, 0.12);
-  animation: posterIn 0.7s ease-out both;
+  /* Resting state must stay visible: Android Chrome can skip animations
+     (background tab / battery saver), and fill-mode:both would leave opacity:0 */
+  opacity: 1;
+  transform: none;
+  animation: posterIn 0.7s ease-out;
 }
 
 @keyframes posterIn {
   from {
-    opacity: 0;
+    opacity: 0.01;
     transform: translateY(16px) scale(0.985);
   }
   to {
@@ -110,7 +122,10 @@ body {
 .poster::before {
   content: "";
   position: absolute;
-  inset: 8px;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
   border: 1px solid rgba(180, 150, 110, 0.25);
   border-radius: 3px;
   pointer-events: none;
@@ -140,24 +155,9 @@ body {
   width: 52px;
   height: 52px;
   color: var(--cream);
+  /* Static shadow only — animating filter is a known Android Chrome paint bug */
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
-  animation: starGlow 3.5s ease-in-out infinite;
-}
-
-.ornament-right .icon-star-badge {
-  animation-delay: 1.2s;
-}
-
-@keyframes starGlow {
-  0%,
-  100% {
-    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
-    opacity: 0.85;
-  }
-  50% {
-    filter: drop-shadow(0 0 8px rgba(243, 230, 200, 0.55));
-    opacity: 1;
-  }
+  opacity: 0.95;
 }
 
 .icon-horseshoe,
@@ -175,6 +175,7 @@ body {
 .main-title {
   margin: 0;
   font-family: var(--font-display);
+  font-size: 1.45rem;
   font-size: clamp(1.45rem, 5vw, 2.55rem);
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -184,12 +185,13 @@ body {
     0 2px 0 #1a1008,
     0 4px 8px rgba(0, 0, 0, 0.55),
     0 0 24px rgba(200, 150, 80, 0.15);
-  animation: titleRise 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+  opacity: 1;
+  animation: titleRise 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes titleRise {
   from {
-    opacity: 0;
+    opacity: 0.01;
     letter-spacing: 0.2em;
     transform: translateY(-8px);
   }
@@ -204,10 +206,12 @@ body {
   margin: 0.55rem 0 0;
   font-family: var(--font-tag);
   font-style: italic;
+  font-size: 0.95rem;
   font-size: clamp(0.85rem, 2.4vw, 1.1rem);
   color: var(--cream-dim);
   letter-spacing: 0.02em;
-  animation: fadeUp 0.9s ease 0.2s both;
+  opacity: 1;
+  animation: fadeUp 0.9s ease 0.2s;
 }
 
 .tagline .star {
@@ -217,7 +221,7 @@ body {
 
 @keyframes fadeUp {
   from {
-    opacity: 0;
+    opacity: 0.01;
     transform: translateY(6px);
   }
   to {
@@ -271,6 +275,8 @@ body {
   border-radius: 3px;
   padding: 0.45rem 0.9rem;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   box-shadow: 0 2px 0 #3a1808, inset 0 1px 0 rgba(255, 200, 140, 0.25);
   transition: transform 0.12s ease, filter 0.15s ease;
 }
@@ -416,15 +422,20 @@ body {
 }
 
 .paid-check {
+  -webkit-appearance: none;
   appearance: none;
   width: 1.35rem;
   height: 1.35rem;
+  min-width: 1.35rem;
+  min-height: 1.35rem;
   border: 2px solid var(--ink-soft);
   border-radius: 2px;
   background: rgba(255, 250, 235, 0.7);
   cursor: pointer;
   position: relative;
   vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
 }
 
@@ -441,9 +452,13 @@ body {
 .paid-check:checked::after {
   content: "✓";
   position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--cream);
   font-size: 0.95rem;
   font-weight: 700;
@@ -469,7 +484,8 @@ body {
   border-radius: 3px;
   padding: 0.65rem 0.4rem 0.85rem;
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-  animation: fadeUp 0.7s ease 0.35s both;
+  opacity: 1;
+  animation: fadeUp 0.7s ease 0.35s;
 }
 
 .specialty-ornaments {
@@ -493,6 +509,7 @@ body {
 .specialty-title {
   margin: 0 0 0.4rem;
   font-family: var(--font-display);
+  font-size: 1.15rem;
   font-size: clamp(1rem, 2.8vw, 1.35rem);
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -590,7 +607,8 @@ body {
   border-radius: 3px;
   padding: 0.75rem 0.65rem 0.85rem;
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-  animation: fadeUp 0.7s ease 0.4s both;
+  opacity: 1;
+  animation: fadeUp 0.7s ease 0.4s;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -692,6 +710,8 @@ body {
   cursor: pointer;
   width: 100%;
   margin-top: auto;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
   transition: filter 0.15s ease;
 }
 
@@ -718,7 +738,8 @@ body {
   border-radius: 3px;
   padding: 1.6rem 0.85rem 0.85rem;
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-  animation: fadeUp 0.7s ease 0.45s both;
+  opacity: 1;
+  animation: fadeUp 0.7s ease 0.45s;
 }
 
 .notes-tab {
@@ -798,8 +819,41 @@ body {
   padding: 0;
   background: var(--parchment);
   color: var(--ink);
-  max-width: min(420px, calc(100vw - 2rem));
+  width: calc(100vw - 2rem);
+  max-width: 420px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+/* Fallback when <dialog> is unsupported (older Android WebViews) */
+.confirm-dialog.dialog-fallback {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  margin: 0;
+}
+
+.confirm-dialog.dialog-fallback[hidden] {
+  display: none !important;
+}
+
+.dialog-scrim {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 999;
+  background: rgba(20, 10, 5, 0.65);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.dialog-scrim[hidden] {
+  display: none !important;
 }
 
 .confirm-dialog::backdrop {
@@ -833,8 +887,19 @@ body {
 
 /* —— Mobile —— */
 @media (max-width: 720px) {
+  .wood-bg {
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(90, 50, 25, 0.45), transparent 50%),
+      linear-gradient(180deg, #2b170e, #120a06);
+  }
+
+  .wood-bg::after {
+    background: radial-gradient(circle at 50% 0%, transparent 40%, rgba(0, 0, 0, 0.45) 100%);
+  }
+
   .poster {
     width: calc(100% - 0.75rem);
+    max-width: none;
     margin: 0.65rem auto 1.5rem;
     padding: 0.85rem 0.65rem 1rem;
   }
@@ -852,6 +917,7 @@ body {
   .icon-star-badge {
     width: 36px;
     height: 36px;
+    filter: none;
   }
 
   .icon-horseshoe,
@@ -895,8 +961,17 @@ body {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .poster,
+  .main-title,
+  .tagline,
+  .specialty-card,
+  .spending-card,
+  .notes-panel {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }

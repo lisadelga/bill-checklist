@@ -109,14 +109,25 @@
     return store.months[month];
   };
 
+  let storageOk = true;
   const persist = () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        activeMonth: store.activeMonth,
-        months: store.months,
-      })
-    );
+    if (!storageOk) return;
+    try {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          activeMonth: store.activeMonth,
+          months: store.months,
+        })
+      );
+    } catch {
+      storageOk = false;
+      const hint = document.querySelector(".save-hint");
+      if (hint) {
+        hint.textContent =
+          "Saving is unavailable in this browser mode — checklist won’t persist after you leave.";
+      }
+    }
   };
 
   const els = {
@@ -132,6 +143,55 @@
       fuel: document.getElementById("spend-fuel"),
       groceries: document.getElementById("spend-groceries"),
     },
+  };
+
+  if (
+    !els.monthSelect ||
+    !els.billsBody ||
+    !els.truckItems ||
+    !els.racItems ||
+    !els.notesArea ||
+    !els.btnNewMonth ||
+    !els.confirmReset ||
+    !els.spendLists.entertainment ||
+    !els.spendLists.fuel ||
+    !els.spendLists.groceries
+  ) {
+    return;
+  }
+
+  const supportsDialog =
+    typeof HTMLDialogElement === "function" &&
+    typeof els.confirmReset.showModal === "function";
+
+  let dialogScrim = null;
+  if (!supportsDialog) {
+    els.confirmReset.classList.add("dialog-fallback");
+    els.confirmReset.setAttribute("hidden", "");
+    dialogScrim = document.createElement("button");
+    dialogScrim.type = "button";
+    dialogScrim.className = "dialog-scrim";
+    dialogScrim.setAttribute("aria-label", "Close dialog");
+    dialogScrim.hidden = true;
+    document.body.appendChild(dialogScrim);
+  }
+
+  const openConfirm = () => {
+    if (supportsDialog) {
+      els.confirmReset.showModal();
+      return;
+    }
+    els.confirmReset.returnValue = "";
+    els.confirmReset.removeAttribute("hidden");
+    if (dialogScrim) dialogScrim.hidden = false;
+  };
+
+  const closeConfirm = (value) => {
+    if (supportsDialog) return;
+    els.confirmReset.returnValue = value || "cancel";
+    els.confirmReset.setAttribute("hidden", "");
+    if (dialogScrim) dialogScrim.hidden = true;
+    els.confirmReset.dispatchEvent(new Event("close"));
   };
 
   const state = () => ensureMonth(store.activeMonth);
@@ -371,7 +431,10 @@
   els.truckItems.addEventListener("change", onSpecialtyChange);
   els.racItems.addEventListener("change", onSpecialtyChange);
 
-  document.querySelector(".spending-row").addEventListener("click", (e) => {
+  const spendingRow = document.querySelector(".spending-row");
+  if (!spendingRow) return;
+
+  spendingRow.addEventListener("click", (e) => {
     const addBtn = e.target.closest("[data-spend-add]");
     if (addBtn) {
       const key = addBtn.dataset.spendAdd;
@@ -387,7 +450,7 @@
       const amountInput = list.querySelector(
         ".spend-entry:last-child input[data-field='amount']"
       );
-      amountInput?.focus();
+      if (amountInput) amountInput.focus();
       return;
     }
 
@@ -404,7 +467,7 @@
     }
   });
 
-  document.querySelector(".spending-row").addEventListener("input", (e) => {
+  spendingRow.addEventListener("input", (e) => {
     const row = e.target.closest(".spend-entry");
     if (!row) return;
     const field = e.target.dataset.field;
@@ -425,7 +488,7 @@
     persist();
   });
 
-  document.querySelector(".spending-row").addEventListener("change", (e) => {
+  spendingRow.addEventListener("change", (e) => {
     const row = e.target.closest(".spend-entry");
     if (!row || e.target.dataset.field !== "date") return;
     const entry = findEntry(row.dataset.spendKey, row.dataset.entryId);
@@ -447,8 +510,20 @@
   });
 
   els.btnNewMonth.addEventListener("click", () => {
-    els.confirmReset.showModal();
+    openConfirm();
   });
+
+  if (!supportsDialog) {
+    els.confirmReset.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[value]");
+      if (!btn) return;
+      e.preventDefault();
+      closeConfirm(btn.value);
+    });
+    if (dialogScrim) {
+      dialogScrim.addEventListener("click", () => closeConfirm("cancel"));
+    }
+  }
 
   els.confirmReset.addEventListener("close", () => {
     if (els.confirmReset.returnValue !== "confirm") return;
@@ -456,7 +531,7 @@
     const prev = state();
     fresh.bills = fresh.bills.map((b) => {
       const old = prev.bills.find((x) => x.id === b.id);
-      return { ...b, dueDate: old?.dueDate || "" };
+      return { ...b, dueDate: (old && old.dueDate) || "" };
     });
     store.months[store.activeMonth] = fresh;
     persist();
